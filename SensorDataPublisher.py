@@ -10,22 +10,24 @@ from threading import Condition
 
 import fastdds
 import SensorData
+from utils import get_logger
 
 
 class WriterListener(fastdds.DataWriterListener):
     def __init__(self, writer):
         self._writer = writer
+        self.logger = get_logger('publisher.listener')
         super().__init__()
 
     def on_publication_matched(self, datawriter, info):
         if 0 < info.current_count_change:
-            print(f"Publisher matched subscriber {info.last_subscription_handle}")
+            self.logger.info(f"Publisher matched subscriber {info.last_subscription_handle}")
             self._writer._cvDiscovery.acquire()
             self._writer._matched_reader += 1
             self._writer._cvDiscovery.notify()
             self._writer._cvDiscovery.release()
         else:
-            print(f"Publisher unmatched subscriber {info.last_subscription_handle}")
+            self.logger.info(f"Publisher unmatched subscriber {info.last_subscription_handle}")
             self._writer._cvDiscovery.acquire()
             self._writer._matched_reader -= 1
             self._writer._cvDiscovery.notify()
@@ -38,6 +40,7 @@ class SensorDataWriter:
         self._cvDiscovery = Condition()
         self.sample_id = 1
         self.sensor_id = 1
+        self.logger = get_logger('publisher.writer')
 
         factory = fastdds.DomainParticipantFactory.get_instance()
         self.participant_qos = fastdds.DomainParticipantQos()
@@ -74,14 +77,14 @@ class SensorDataWriter:
         data.timestamp_nanosec(int((current_time - int(current_time)) * 1e9))
 
         self.writer.write(data)
-        print(f"发布传感器数据 [ID: {sensor_id}, 温度: {temperature:.2f}°C, 时间戳: {data.timestamp_sec()}.{data.timestamp_nanosec()}]")
+        self.logger.info(f"发布传感器数据 [ID: {sensor_id}, 温度: {temperature:.2f}°C, 时间戳: {data.timestamp_sec()}.{data.timestamp_nanosec()}]")
 
     def wait_discovery(self):
         self._cvDiscovery.acquire()
-        print("等待Subscriber发现...")
+        self.logger.info("等待Subscriber发现...")
         self._cvDiscovery.wait_for(lambda: self._matched_reader != 0)
         self._cvDiscovery.release()
-        print("发现完成!")
+        self.logger.info("发现完成!")
 
     def run(self, interval=1.0, num_samples=10):
         self.wait_discovery()
@@ -98,8 +101,11 @@ class SensorDataWriter:
 
 
 def main():
-    print("SensorData Publisher")
-    print("=" * 40)
+    # 获取主程序日志记录器
+    logger = get_logger('publisher.main')
+    
+    logger.info("SensorData Publisher")
+    logger.info("=" * 40)
 
     interval = 1.0
     num_samples = 10
@@ -119,6 +125,8 @@ def main():
     writer = SensorDataWriter()
     writer.run(interval, num_samples)
     writer.delete()
+    
+    logger.info("Publisher程序结束")
 
     return 0
 

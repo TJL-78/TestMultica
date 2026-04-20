@@ -8,28 +8,31 @@ import sys
 
 import fastdds
 import SensorData
+from utils import get_logger
 
 
 class ReaderListener(fastdds.DataReaderListener):
     def __init__(self):
+        self.logger = get_logger('subscriber.listener')
         super().__init__()
 
     def on_subscription_matched(self, datareader, info):
         if 0 < info.current_count_change:
-            print(f"Subscriber matched publisher {info.last_publication_handle}")
+            self.logger.info(f"Subscriber matched publisher {info.last_publication_handle}")
         else:
-            print(f"Subscriber unmatched publisher {info.last_publication_handle}")
+            self.logger.info(f"Subscriber unmatched publisher {info.last_publication_handle}")
 
     def on_data_available(self, reader):
         info = fastdds.SampleInfo()
         data = SensorData.SensorData()
         reader.take_next_sample(data, info)
 
-        print(f"收到传感器数据 [ID: {data.sensor_id()}, 温度: {data.temperature():.2f}°C, 时间戳: {data.timestamp_sec()}.{data.timestamp_nanosec()}]")
+        self.logger.info(f"收到传感器数据 [ID: {data.sensor_id()}, 温度: {data.temperature():.2f}°C, 时间戳: {data.timestamp_sec()}.{data.timestamp_nanosec()}]")
 
 
 class SensorDataReader:
     def __init__(self):
+        self.logger = get_logger('subscriber.reader')
         factory = fastdds.DomainParticipantFactory.get_instance()
         self.participant_qos = fastdds.DomainParticipantQos()
         factory.get_default_participant_qos(self.participant_qos)
@@ -62,18 +65,21 @@ class SensorDataReader:
 
     def run(self):
         def signal_handler(sig, frame):
-            print("\n收到中断信号，停止订阅")
+            self.logger.info("收到中断信号，停止订阅")
             self.delete()
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
-        print("等待数据... (按Ctrl+C停止)")
+        self.logger.info("等待数据... (按Ctrl+C停止)")
         signal.pause()
 
 
 def main():
-    print("SensorData Subscriber")
-    print("=" * 40)
+    # 获取主程序日志记录器
+    logger = get_logger('subscriber.main')
+    
+    logger.info("SensorData Subscriber")
+    logger.info("=" * 40)
 
     reader = SensorDataReader()
     reader.run()

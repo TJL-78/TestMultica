@@ -8,7 +8,11 @@
 TestMultica/
 ├── SensorData.idl              # 传感器数据类型定义
 ├── SensorDataPublisher.py      # 发布者程序
-├── SensorDataSubscriber.py    # 订阅者程序
+├── SensorDataSubscriber.py     # 订阅者程序
+├── utils.py                    # 日志工具模块
+├── test_logger.py              # 日志测试脚本
+├── log_config_example.py       # 日志配置示例
+├── LOGGING_README.md           # 日志工具使用说明
 └── README.md                   # 本说明文件
 ```
 
@@ -110,6 +114,31 @@ cd TestMultica
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 python3 SensorDataSubscriber.py
+```
+
+## 日志工具
+
+项目包含一个灵活的日志工具，支持多级别日志、控制台和文件输出、格式自定义等功能。
+
+### 快速使用
+
+```python
+from utils import get_logger
+
+logger = get_logger('my_module')
+logger.info("程序启动")
+logger.warning("警告信息")
+```
+
+### 详细说明
+
+查看 [LOGGING_README.md](LOGGING_README.md) 获取完整的使用说明和配置示例。
+
+### 测试日志工具
+
+```bash
+python3 test_logger.py
+python3 log_config_example.py
 ```
 
 ## 数据类型
