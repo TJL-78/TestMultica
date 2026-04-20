@@ -1,0 +1,10 @@
+module sensor {
+
+struct SensorData {
+    @key unsigned long sensor_id;
+    double temperature;
+    unsigned long timestamp_sec;
+    unsigned long timestamp_nanosec;
+};
+
+};
